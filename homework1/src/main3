@@ -1,0 +1,40 @@
+#include <iostream>
+using namespace std;
+void powerset(char s[], int n, char answer[], int k)
+{
+    if (n == 0)
+    {
+        if (k == 0)
+        {
+            cout << "{}";
+        }
+        else
+        {
+            cout << "{";
+            for (int i = 0; i < k; i++)
+            {
+                cout << answer[i];
+                if (i < k - 1)
+                {
+                    cout << ", ";
+                }
+            }
+            cout << "}";
+        }
+        cout << endl;
+        return;
+    }
+    powerset(s, n - 1, answer, k); // 不選目前的元素
+    answer[k] = s[n - 1];// 選目前的元素
+    powerset(s, n - 1, answer, k + 1);
+}
+
+int main()
+{
+    char s[3] = { 'a', 'b', 'c' };
+    int n = 3;
+    char answer[3];
+    int k = 0;
+    powerset(s, n, answer, k);
+    return 0;
+}
