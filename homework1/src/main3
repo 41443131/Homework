@@ -28,7 +28,6 @@ void powerset(char s[], int n, char answer[], int k)
     answer[k] = s[n - 1];// 選目前的元素
     powerset(s, n - 1, answer, k + 1);
 }
-
 int main()
 {
     char s[3] = { 'a', 'b', 'c' };
