@@ -1,0 +1,210 @@
+#include<iostream>
+using namespace std;
+class Polynomial;
+class Term 
+{
+	friend Polynomial;
+	friend ostream& operator<<(ostream& out, const Polynomial& a);
+private:
+	float coef;
+	int exp;
+};
+class Polynomial
+{
+private:
+	Term* termArray;
+	int capacity;
+	int terms;
+public:
+	Polynomial() :capacity(2), terms(0) 
+	{
+		termArray = new Term[capacity];
+	}
+	Polynomial(const Polynomial& a);
+	~Polynomial();
+	Polynomial& operator=(const Polynomial& a);
+	void newTerm(const float theCoef, const int theExp);
+	Polynomial Add(Polynomial b);
+	Polynomial Mult(Polynomial b);
+	float Eval(float x);
+	friend istream& operator>>(istream& in, Polynomial& a);
+	friend ostream& operator<<(ostream& out, const Polynomial& a);
+};
+Polynomial::Polynomial(const Polynomial& a)
+	: capacity(a.capacity), terms(a.terms) 
+{
+	termArray = new Term[capacity];
+	copy(a.termArray, a.termArray + terms, termArray);
+}
+Polynomial::~Polynomial() 
+{
+	delete[] termArray;
+}
+Polynomial& Polynomial::operator=(const Polynomial& a) 
+{
+	if (this != &a) 
+	{
+		delete[] termArray;
+		capacity = a.capacity;
+		terms = a.terms;
+		termArray = new Term[capacity];
+		copy(a.termArray, a.termArray + terms, termArray);
+	}
+	return *this;
+}
+void Polynomial::newTerm(const float theCoef, const int theExp)
+{
+	if (theCoef == 0)return;
+	if (terms == capacity)
+	{
+		capacity *= 2;
+		Term* temp = new Term[capacity];
+		copy(termArray, termArray + terms, temp);
+		delete[]termArray;
+		termArray = temp;
+	}
+	termArray[terms].coef = theCoef;
+	termArray[terms++].exp = theExp;
+}
+Polynomial Polynomial::Add(Polynomial b) 
+{
+	Polynomial c;
+	int aPos = 0, bPos = 0;
+	while ((aPos < terms) && (bPos < b.terms))
+		if (termArray[aPos].exp == b.termArray[bPos].exp) 
+		{
+			float t = termArray[aPos].coef + b.termArray[bPos].coef;
+			if (t) c.newTerm(t, termArray[aPos].exp);
+			aPos++; bPos++;
+		}
+		else if (termArray[aPos].exp < b.termArray[bPos].exp) 
+		{
+			c.newTerm(termArray[aPos].coef, termArray[aPos].exp);
+			aPos++;
+		}
+		else 
+		{
+			c.newTerm(b.termArray[bPos].coef, b.termArray[bPos].exp);
+			bPos++;
+		}
+	for (; aPos < terms; aPos++)
+		c.newTerm(termArray[aPos].coef, termArray[aPos].exp);
+	for (; bPos < b.terms; bPos++)
+		c.newTerm(b.termArray[bPos].coef, b.termArray[bPos].exp);
+	return c;
+}
+Polynomial Polynomial::Mult(Polynomial b)
+{
+	Polynomial c;
+	for (int i = 0; i < terms; i++) 
+	{
+		Polynomial temp;
+		for (int j = 0; j < b.terms; j++) 
+		{
+			float newCoef = termArray[i].coef * b.termArray[j].coef;
+			int newExp = termArray[i].exp + b.termArray[j].exp;
+			temp.newTerm(newCoef, newExp);
+		}
+		c = c.Add(temp);
+	}
+	return c;
+}
+float Polynomial::Eval(float x)
+{
+	float result = 0;
+	for (int i = 0; i < terms; i++) 
+	{
+		result += termArray[i].coef * pow(x, termArray[i].exp);
+	}
+	return result;
+}
+istream& operator>>(istream& in, Polynomial& a)
+{
+	int n;
+	in >> n;
+	if (!in)return in;
+	delete[] a.termArray;
+	a.capacity = 2;
+	a.terms = 0;
+	a.termArray = new Term[a.capacity];
+	for (int i = 0; i < n; i++)
+	{
+		float coef;
+		int exp;
+		in >> coef >> exp;
+		a.newTerm(coef, exp);
+	}
+	return in;
+}
+ostream& operator<<(ostream& out, const Polynomial& a)
+{
+	if (a.terms == 0)
+	{
+		out << "0";
+		return out;
+	}
+	for (int i = 0; i < a.terms; i++) 
+	{
+		if (i > 0 && a.termArray[i].coef > 0)
+			out << "+";
+		out << a.termArray[i].coef;
+		if (a.termArray[i].exp != 0)
+			out << "x^" << a.termArray[i].exp;
+	}
+	return out;
+}
+int main()
+{
+	Polynomial a, b;
+	float x;
+	int c;
+	cout << "A: ";
+	cin >> a;
+	cout << "B: ";
+	cin >> b;
+	while (true)
+	{
+		cout << "\n========== 選單 ==========" << endl;
+		cout << "1. 計算 A + B" << endl;
+		cout << "2. 計算 A * B" << endl;
+		cout << "3. 計算 A(x)" << endl;
+		cout << "4. 計算 B(x)" << endl;
+		cout << "5. 重新輸入 A、B" << endl;
+		cout << "0. 結束程式" << endl;
+		cout << "請選擇功能: ";
+		cin >> c;
+		if (c == 0) {
+			cout << "程式結束。" << endl;
+			break;
+		}
+		switch (c)
+		{
+		case 1:
+			cout << "A(x) + B(x) = " << a.Add(b) << endl;
+			break;
+		case 2:
+			cout << "A(x) * B(x) = " << a.Mult(b) << endl;
+			break;
+		case 3:
+			cout << "輸入x: ";
+			cin >> x;
+			cout << "A(" << x << ") = " << a.Eval(x) << endl;
+			break;
+		case 4:
+			cout << "輸入x: ";
+			cin >> x;
+			cout << "B(" << x << ") = " << b.Eval(x) << endl;
+			break;
+		case 5:
+			cout << "輸入A" << endl;
+			cin >> a;
+			cout << "輸入B" << endl;
+			cin >> b;
+			break;
+		default:
+			cout << "重新輸入" << endl;
+			break;
+		}
+	}
+	return 0;
+}
