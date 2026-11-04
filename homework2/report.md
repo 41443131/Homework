@@ -15,7 +15,7 @@
 **程式實作**
 
 以下是完整程式碼。
-
+```cpp
 #include<iostream>
 #include<algorithm>
 #include<cmath>
