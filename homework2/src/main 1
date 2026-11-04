@@ -1,4 +1,5 @@
 #include<iostream>
+#include<cmath>
 using namespace std;
 class Polynomial;
 class Term 
@@ -6,27 +7,27 @@ class Term
 	friend Polynomial;
 	friend ostream& operator<<(ostream& out, const Polynomial& a);
 private:
-	float coef;
-	int exp;
+	float coef; // 係數
+	int exp;    // 次方
 };
 class Polynomial
 {
 private:
-	Term* termArray;
-	int capacity;
-	int terms;
+	Term* termArray; // 動態陣列
+	int capacity;    // 容量
+	int terms;       // 目前項數
 public:
 	Polynomial() :capacity(2), terms(0) 
 	{
 		termArray = new Term[capacity];
 	}
-	Polynomial(const Polynomial& a);
-	~Polynomial();
-	Polynomial& operator=(const Polynomial& a);
+	Polynomial(const Polynomial& a); // 複製建構子
+	~Polynomial();                   // 解構子
+	Polynomial& operator=(const Polynomial& a); // 指定運算子
 	void newTerm(const float theCoef, const int theExp);
-	Polynomial Add(Polynomial b);
-	Polynomial Mult(Polynomial b);
-	float Eval(float x);
+	Polynomial Add(Polynomial b);  // 加法
+	Polynomial Mult(Polynomial b); // 乘法
+	float Eval(float x);           // 代入計算
 	friend istream& operator>>(istream& in, Polynomial& a);
 	friend ostream& operator<<(ostream& out, const Polynomial& a);
 };
@@ -54,13 +55,13 @@ Polynomial& Polynomial::operator=(const Polynomial& a)
 }
 void Polynomial::newTerm(const float theCoef, const int theExp)
 {
-	if (theCoef == 0)return;
+	if (theCoef == 0) return;
 	if (terms == capacity)
 	{
-		capacity *= 2;
+		capacity *= 2; // 空間不夠變兩倍
 		Term* temp = new Term[capacity];
 		copy(termArray, termArray + terms, temp);
-		delete[]termArray;
+		delete[] termArray;
 		termArray = temp;
 	}
 	termArray[terms].coef = theCoef;
@@ -71,6 +72,7 @@ Polynomial Polynomial::Add(Polynomial b)
 	Polynomial c;
 	int aPos = 0, bPos = 0;
 	while ((aPos < terms) && (bPos < b.terms))
+	{
 		if (termArray[aPos].exp == b.termArray[bPos].exp) 
 		{
 			float t = termArray[aPos].coef + b.termArray[bPos].coef;
@@ -87,6 +89,8 @@ Polynomial Polynomial::Add(Polynomial b)
 			c.newTerm(b.termArray[bPos].coef, b.termArray[bPos].exp);
 			bPos++;
 		}
+	}
+	// 剩下沒比完的直接補進去
 	for (; aPos < terms; aPos++)
 		c.newTerm(termArray[aPos].coef, termArray[aPos].exp);
 	for (; bPos < b.terms; bPos++)
@@ -109,6 +113,7 @@ Polynomial Polynomial::Mult(Polynomial b)
 	}
 	return c;
 }
+
 float Polynomial::Eval(float x)
 {
 	float result = 0;
@@ -122,7 +127,7 @@ istream& operator>>(istream& in, Polynomial& a)
 {
 	int n;
 	in >> n;
-	if (!in)return in;
+	if (!in) return in;
 	delete[] a.termArray;
 	a.capacity = 2;
 	a.terms = 0;
