@@ -9,7 +9,7 @@
 以下是完整程式碼。
 ```cpp
 #include<iostream>
-#include<cmath>
+#include<cmath> // 用來算 pow 的
 using namespace std;
 class Polynomial;
 class Term 
@@ -23,34 +23,38 @@ private:
 class Polynomial
 {
 private:
-	Term* termArray; // 動態陣列
-	int capacity;    // 容量
-	int terms;       // 目前項數
+	Term* termArray; // 動態陣列放 Term
+	int capacity;    // 陣列容量
+	int terms;       // 目前有幾項
 public:
+	// 預設建構子：容量設 2，項數 0
 	Polynomial() :capacity(2), terms(0) 
 	{
 		termArray = new Term[capacity];
 	}
-	Polynomial(const Polynomial& a); // 複製建構子
-	~Polynomial();                   // 解構子
-	Polynomial& operator=(const Polynomial& a); // 指定運算子
-	void newTerm(const float theCoef, const int theExp);
-	Polynomial Add(Polynomial b);  // 加法
-	Polynomial Mult(Polynomial b); // 乘法
-	float Eval(float x);           // 代入計算
-	friend istream& operator>>(istream& in, Polynomial& a);
-	friend ostream& operator<<(ostream& out, const Polynomial& a);
+	Polynomial(const Polynomial& a); // 複製建構子 (深 copy)
+	~Polynomial();                   // 解構子 (釋放記憶體)
+	Polynomial& operator=(const Polynomial& a); // 指定運算子多載
+	void newTerm(const float theCoef, const int theExp); // 新增一項
+	Polynomial Add(Polynomial b);  // 多項式相加
+	Polynomial Mult(Polynomial b); // 多項式相乘
+	float Eval(float x);           // 代入 x 計算數值
+	friend istream& operator>>(istream& in, Polynomial& a); // 輸入
+	friend ostream& operator<<(ostream& out, const Polynomial& a); // 輸出
 };
+// 複製建構子
 Polynomial::Polynomial(const Polynomial& a)
 	: capacity(a.capacity), terms(a.terms) 
 {
 	termArray = new Term[capacity];
 	copy(a.termArray, a.termArray + terms, termArray);
 }
+// 解構子
 Polynomial::~Polynomial() 
 {
 	delete[] termArray;
 }
+// 指定運算子 (=)
 Polynomial& Polynomial::operator=(const Polynomial& a) 
 {
 	if (this != &a) 
@@ -63,12 +67,13 @@ Polynomial& Polynomial::operator=(const Polynomial& a)
 	}
 	return *this;
 }
+// 新增一項，滿了就自動把空間變兩倍
 void Polynomial::newTerm(const float theCoef, const int theExp)
 {
-	if (theCoef == 0) return;
+	if (theCoef == 0) return; // 係數是 0 就不用存了
 	if (terms == capacity)
 	{
-		capacity *= 2; // 空間不夠變兩倍
+		capacity *= 2;
 		Term* temp = new Term[capacity];
 		copy(termArray, termArray + terms, temp);
 		delete[] termArray;
@@ -77,68 +82,72 @@ void Polynomial::newTerm(const float theCoef, const int theExp)
 	termArray[terms].coef = theCoef;
 	termArray[terms++].exp = theExp;
 }
+// 多項式相加
 Polynomial Polynomial::Add(Polynomial b) 
 {
 	Polynomial c;
-	int aPos = 0, bPos = 0;
+	int aPos = 0, bPos = 0; // 用兩個指標去掃 A 跟 B
+	// 兩邊都還沒掃完時繼續比次方大小
 	while ((aPos < terms) && (bPos < b.terms))
 	{
 		if (termArray[aPos].exp == b.termArray[bPos].exp) 
 		{
-			float t = termArray[aPos].coef + b.termArray[bPos].coef;
-			if (t) c.newTerm(t, termArray[aPos].exp);
+			float t = termArray[aPos].coef + b.termArray[bPos].coef; // 次方一樣，係數相加
+			if (t) c.newTerm(t, termArray[aPos].exp); // 不為 0 才存進去
 			aPos++; bPos++;
 		}
 		else if (termArray[aPos].exp < b.termArray[bPos].exp) 
 		{
-			c.newTerm(termArray[aPos].coef, termArray[aPos].exp);
+			c.newTerm(termArray[aPos].coef, termArray[aPos].exp); // A 比較小，先放 A
 			aPos++;
 		}
 		else 
 		{
-			c.newTerm(b.termArray[bPos].coef, b.termArray[bPos].exp);
+			c.newTerm(b.termArray[bPos].coef, b.termArray[bPos].exp); // B 比較小，放 B
 			bPos++;
 		}
 	}
-	// 剩下沒比完的直接補進去
+	// 把 A 或 B 剩下的直接補進去
 	for (; aPos < terms; aPos++)
 		c.newTerm(termArray[aPos].coef, termArray[aPos].exp);
 	for (; bPos < b.terms; bPos++)
 		c.newTerm(b.termArray[bPos].coef, b.termArray[bPos].exp);
 	return c;
 }
+// 多項式相乘
 Polynomial Polynomial::Mult(Polynomial b)
 {
 	Polynomial c;
 	for (int i = 0; i < terms; i++) 
 	{
-		Polynomial temp;
+		Polynomial temp; // 存 A 的這一項去乘 B 整條的暫時結果
 		for (int j = 0; j < b.terms; j++) 
 		{
-			float newCoef = termArray[i].coef * b.termArray[j].coef;
-			int newExp = termArray[i].exp + b.termArray[j].exp;
+			float newCoef = termArray[i].coef * b.termArray[j].coef; // 係數相乘
+			int newExp = termArray[i].exp + b.termArray[j].exp;       // 次方相加
 			temp.newTerm(newCoef, newExp);
 		}
-		c = c.Add(temp);
+		c = c.Add(temp); // 每次乘完的結果跟總和相加
 	}
 	return c;
 }
-
+// 代入 x 計算數值
 float Polynomial::Eval(float x)
 {
 	float result = 0;
 	for (int i = 0; i < terms; i++) 
 	{
-		result += termArray[i].coef * pow(x, termArray[i].exp);
+		result += termArray[i].coef * pow(x, termArray[i].exp); // 每一項算出來累加
 	}
 	return result;
 }
+// 輸入多項式 (in 代表輸入串流，例如 cin)
 istream& operator>>(istream& in, Polynomial& a)
 {
 	int n;
-	in >> n;
+	in >> n; // 先讀入有幾項
 	if (!in) return in;
-	delete[] a.termArray;
+	delete[] a.termArray; // 清空舊的
 	a.capacity = 2;
 	a.terms = 0;
 	a.termArray = new Term[a.capacity];
@@ -151,6 +160,7 @@ istream& operator>>(istream& in, Polynomial& a)
 	}
 	return in;
 }
+// 輸出多項式
 ostream& operator<<(ostream& out, const Polynomial& a)
 {
 	if (a.terms == 0)
@@ -161,10 +171,10 @@ ostream& operator<<(ostream& out, const Polynomial& a)
 	for (int i = 0; i < a.terms; i++) 
 	{
 		if (i > 0 && a.termArray[i].coef > 0)
-			out << "+";
+			out << "+"; // 正數前面補個 + 號好看
 		out << a.termArray[i].coef;
 		if (a.termArray[i].exp != 0)
-			out << "x^" << a.termArray[i].exp;
+			out << "x^" << a.termArray[i].exp; // 次方不是 0 才印 x^exp
 	}
 	return out;
 }
@@ -177,6 +187,7 @@ int main()
 	cin >> a;
 	cout << "B: ";
 	cin >> b;
+	// 選單迴圈
 	while (true)
 	{
 		cout << "\n========== 選單 ==========" << endl;
